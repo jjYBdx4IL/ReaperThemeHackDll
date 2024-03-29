@@ -13,6 +13,10 @@ copy a valid ini file there - the name is the dll's name plus '.ini').
 * For reaper to load the dll it seems to have to follow a naming convention. Rename it to
 'reaper_themehack-x64.dll'.
 
+# Limitations
+
+* Menu dropdowns are in dark mode after toggling the fullscreen button twice.
+
 # Todos?
 
 * Menu dropdowns?
@@ -26,4 +30,4 @@ with win32 style hacks.
 
 
 --
-devel/cpp/win/ReaperThemeHackDll@8080
+devel/cpp/win/ReaperThemeHackDll@8081

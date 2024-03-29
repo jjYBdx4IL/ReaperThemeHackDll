@@ -42,6 +42,13 @@
     #pragma comment(lib, "comctl32.lib")
 #endif
 
+// avoid clash with reaper api functions
+namespace UX {
+#include <Uxtheme.h>
+#pragma comment(lib, "uxtheme.lib")
+}
+
+
 // generic C++ stuff
 #include <iostream>
 #include <filesystem>

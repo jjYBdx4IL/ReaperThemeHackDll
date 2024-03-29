@@ -1,14 +1,12 @@
 // https://stackoverflow.com/questions/77985210/how-to-set-menu-bar-color-in-win32
 
 #include "UAHMenuBar.h"
-#include <Uxtheme.h>
 #include <vsstyle.h>
 #include <Vssym32.h>
-#pragma comment(lib, "uxtheme.lib")
 
 #include "inipp.h"
 
-static HTHEME g_menuTheme = nullptr;
+static UX::HTHEME g_menuTheme = nullptr;
 
 static BOOL config_loaded = FALSE;
 
@@ -210,10 +208,10 @@ bool UAHWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT* 
             }
         }
         if (!g_menuTheme) {
-            g_menuTheme = OpenThemeData(hWnd, L"Menu");
+            g_menuTheme = UX::OpenThemeData(hWnd, L"Menu");
         }
 
-        DTTOPTS opts = { sizeof(opts), DTT_TEXTCOLOR, iTextStateID != MPI_DISABLED ? menubar_textcolor : menubar_textcolor_disabled };
+        UX::DTTOPTS opts = { sizeof(opts), DTT_TEXTCOLOR, iTextStateID != MPI_DISABLED ? menubar_textcolor : menubar_textcolor_disabled };
         FillRect(pUDMI->um.hdc, &pUDMI->dis.rcItem, *pbrBackground);
         DrawThemeTextEx(g_menuTheme, pUDMI->um.hdc, MENU_BARITEM, MBI_NORMAL, menuString, mii.cch, dwFlags, &pUDMI->dis.rcItem, &opts);
         return true;
@@ -236,7 +234,7 @@ bool UAHWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT* 
         OutputDebugString(L"WM_THEMECHANGED\n");
         WM_THEMECHANGED_cnt++;
         if (g_menuTheme) {
-            CloseThemeData(g_menuTheme);
+            UX::CloseThemeData(g_menuTheme);
             g_menuTheme = nullptr;
         }
         // continue processing in main wndproc

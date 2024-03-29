@@ -4,6 +4,47 @@
 HHOOK hook_ = nullptr;
 HWND main_hwnd{ nullptr };
 
+// dark mode for menu popups
+// only works after toggling fullscreen button twice
+void allowDarkMode(HWND hWnd) {
+    //HRESULT hr = CoInitialize(0);
+    //ASSERT(SUCCEEDED(hr));
+
+    // https://gist.github.com/rounk-ctrl/b04e5622e30e0d62956870d5c22b7017
+    enum class PreferredAppMode
+    {
+        Default,
+        AllowDark,
+        ForceDark,
+        ForceLight,
+        Max
+    };
+    using fnShouldAppsUseDarkMode = bool (WINAPI*)(); // ordinal 132
+    using fnAllowDarkModeForWindow = bool (WINAPI*)(HWND hWnd, bool allow); // ordinal 133
+    using fnSetPreferredAppMode = PreferredAppMode(WINAPI*)(PreferredAppMode appMode); // ordinal 135, in 1903
+    HMODULE hUxtheme = LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    ASSERT(hUxtheme);
+    if (hUxtheme) {
+        fnSetPreferredAppMode SetPreferredAppMode;
+        SetPreferredAppMode = (fnSetPreferredAppMode)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(135));
+        ASSERT(SetPreferredAppMode);
+        fnAllowDarkModeForWindow AllowDarkModeForWindow;
+        AllowDarkModeForWindow = (fnAllowDarkModeForWindow)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(133));
+        ASSERT(AllowDarkModeForWindow);
+        //SetPreferredAppMode(PreferredAppMode::AllowDark);
+        SetPreferredAppMode(PreferredAppMode::ForceDark);
+
+        UX::SetWindowTheme(hWnd, L"Explorer", NULL);
+        AllowDarkModeForWindow(hWnd, true);
+        SendMessageW(hWnd, WM_THEMECHANGED, 0, 0);
+
+        FreeLibrary(hUxtheme);
+    }
+
+
+    //CoUninitialize();
+}
+
 #ifdef USE_HOOK_SOLUTION
 LRESULT CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -77,6 +118,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
 }
 #endif
 
+
 REAPER_PLUGIN_HINSTANCE g_hInst{ nullptr };
 extern int WM_NCACTIVATE_cnt;
 extern int WM_THEMECHANGED_cnt;
@@ -116,14 +158,15 @@ extern "C" {
             main_hwnd = GetMainHwnd();
             ASSERT(main_hwnd);
 
+            allowDarkMode(main_hwnd);
+
+#ifndef NDEBUG
             WCHAR path[MAX_PATH];
             GetModuleFileNameW(hInstance, path, MAX_PATH);
             OutputDebugString(path);
             OutputDebugString(L"\n");
-            CStringW asd("123");
-            asd.Append(L".ini");
-            OutputDebugString(asd);
-            OutputDebugString(L"\n");
+#endif
+
 
 #ifndef NDEBUG
             {
