@@ -111,9 +111,6 @@ void UAHDrawMenuNCBottomLine(HWND hWnd)
     ReleaseDC(hWnd, hdc);
 }
 
-static int dupe_counter = 0;
-static int last_message = -1;
-
 int WM_NCACTIVATE_cnt = 0;
 int WM_THEMECHANGED_cnt = 0;
 int WM_UAHDRAWMENU_cnt = 0;
@@ -122,6 +119,8 @@ int WM_UAHMEASUREMENUITEM_cnt = 0;
 
 bool UAHWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT* lr)
 {
+    static int dupe_counter = 0;
+    static int last_message = -1;
     if (message == last_message) {
         dupe_counter++;
     }
@@ -256,6 +255,11 @@ bool UAHWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT* 
         UAHDrawMenuNCBottomLine(hWnd);
         return true;
         break;
+    // the following two messages come through when fullscreen is toggled.
+    // apparently it helps to block them. ??
+    case WM_STYLECHANGING:
+    case WM_STYLECHANGED:
+        return true;
     default:
         //OutputDebugString(L"default\n");
         return false;

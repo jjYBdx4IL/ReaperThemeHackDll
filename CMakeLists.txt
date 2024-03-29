@@ -44,6 +44,8 @@ add_library(${PROJECT_NAME} SHARED
     reaper_api_impl.cpp
     
     ReaperMenuBarThemeDll.cpp
+
+    README.md
 )
 target_include_directories(${PROJECT_NAME} PRIVATE ${REAPERSDK_INCLUDE_DIRS} ${INIPP_INCLUDE_DIRS})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})

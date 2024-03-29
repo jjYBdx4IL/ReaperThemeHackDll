@@ -4,9 +4,14 @@ The Reaper DAW does not support skinning the menu bar.
 This is a plugin dll that hacks itself into the menu bar
 drawing process by subclassing the main window REAPERwnd.
 
-# Limitations
+# Installation
 
-* Not yet workung in fullscreen mode.
+* Copy the plugin dll into UserPlugins/ folder below the reaper installation
+* That folder must be user-writable because the DLL will create a .ini file alongside (otherwise
+copy a valid ini file there - the name is the dll's name plus '.ini').
+* You can configure that .ini after the first start with a text editor.
+* For reaper to load the dll it seems to have to follow a naming convention. Rename it to
+'reaper_themehack-x64.dll'.
 
 # Todos?
 
@@ -14,14 +19,11 @@ drawing process by subclassing the main window REAPERwnd.
 * Other widgets?
 * ...
 
-# NOTES
-* Reaper main window style normal: 14CF0844, fullscreen: 140B0844
-  * https://learn.microsoft.com/en-us/windows/win32/winmsg/window-class-styles
-  * https://learn.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles
-  * 0x00040000 WS_EX_APPWINDOW
-  * 0x00400000L WS_EX_LAYOUTRTL
-  * 0x00800000 ???
-  * posted q: https://stackoverflow.com/questions/78244786/theme-hack-fails-to-work-in-fullscreen-mode
+# Notes
+
+* The project at https://github.com/jjYBdx4IL/win32-custom-menubar-aero-theme may be used to experiment
+with win32 style hacks.
+
 
 --
-devel/cpp/win/ReaperThemeHackDll@8079
+devel/cpp/win/ReaperThemeHackDll@8080
