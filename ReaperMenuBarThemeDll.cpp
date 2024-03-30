@@ -3,14 +3,15 @@
 
 HHOOK hook_ = nullptr;
 HWND main_hwnd{ nullptr };
+LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
+    LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 // dark mode for menu popups
 // only works after toggling fullscreen button twice
+// https://gist.github.com/rounk-ctrl/b04e5622e30e0d62956870d5c22b7017
 void allowDarkMode(HWND hWnd) {
-    //HRESULT hr = CoInitialize(0);
-    //ASSERT(SUCCEEDED(hr));
+    static HMODULE hUxtheme = NULL;
 
-    // https://gist.github.com/rounk-ctrl/b04e5622e30e0d62956870d5c22b7017
     enum class PreferredAppMode
     {
         Default,
@@ -22,27 +23,35 @@ void allowDarkMode(HWND hWnd) {
     using fnShouldAppsUseDarkMode = bool (WINAPI*)(); // ordinal 132
     using fnAllowDarkModeForWindow = bool (WINAPI*)(HWND hWnd, bool allow); // ordinal 133
     using fnSetPreferredAppMode = PreferredAppMode(WINAPI*)(PreferredAppMode appMode); // ordinal 135, in 1903
-    HMODULE hUxtheme = LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-    ASSERT(hUxtheme);
-    if (hUxtheme) {
-        fnSetPreferredAppMode SetPreferredAppMode;
+    fnSetPreferredAppMode SetPreferredAppMode;
+    fnAllowDarkModeForWindow AllowDarkModeForWindow;
+
+    if (!hUxtheme) {
+        HMODULE hUxtheme = LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        ASSERT(hUxtheme);
         SetPreferredAppMode = (fnSetPreferredAppMode)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(135));
         ASSERT(SetPreferredAppMode);
-        fnAllowDarkModeForWindow AllowDarkModeForWindow;
         AllowDarkModeForWindow = (fnAllowDarkModeForWindow)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(133));
         ASSERT(AllowDarkModeForWindow);
         //SetPreferredAppMode(PreferredAppMode::AllowDark);
         SetPreferredAppMode(PreferredAppMode::ForceDark);
+        //FreeLibrary(hUxtheme);
+    }
 
+    if (hUxtheme) {
         UX::SetWindowTheme(hWnd, L"Explorer", NULL);
         AllowDarkModeForWindow(hWnd, true);
         SendMessageW(hWnd, WM_THEMECHANGED, 0, 0);
-
-        FreeLibrary(hUxtheme);
     }
+}
 
-
-    //CoUninitialize();
+// https://stackoverflow.com/questions/39261826/change-the-color-of-the-title-bar-caption-of-a-win32-application
+void enableImmersiveDarkMode(HWND hWnd) {
+    BOOL USE_DARK_MODE = true;
+    BOOL SET_IMMERSIVE_DARK_MODE_SUCCESS = SUCCEEDED(UX::DwmSetWindowAttribute(
+        hWnd, UX::DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE,
+        &USE_DARK_MODE, sizeof(USE_DARK_MODE)));
+    //ASSERT(SET_IMMERSIVE_DARK_MODE_SUCCESS);
 }
 
 #ifdef USE_HOOK_SOLUTION
@@ -81,6 +90,94 @@ LRESULT CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
 }
 #endif
 
+LRESULT CALLBACK CBTProc(int nCode,
+    WPARAM wParam, LPARAM lParam)
+{
+    //OutputDebugString(L"CBTProc\n");
+
+    TCHAR buff[512];
+#define DBG_HWND(x) \
+        { \
+            GetWindowText(x, buff, 512); \
+            OutputDebugString(buff); \
+            OutputDebugString(L" - "); \
+            GetClassName(x, buff, 512); \
+            OutputDebugString(buff); \
+            OutputDebugString(L"\n"); \
+        }
+
+
+    if (nCode == HCBT_CREATEWND) {
+        HWND hWnd = (HWND)wParam;
+        DBG_HWND(hWnd);
+
+        //allowDarkMode(hWnd);
+        //enableImmersiveDarkMode(hWnd);
+
+        //if (StrCmp(L"#32770", buff)) {
+            BOOL lr = SetWindowSubclass(hWnd, CallWndSubClassProc, 1, 0);
+            ASSERT(lr);
+        //}
+    }
+    if (nCode == HCBT_DESTROYWND) {
+        HWND hWnd = (HWND)wParam;
+        RemoveWindowSubclass(hWnd, CallWndSubClassProc, 1);
+    }
+
+    return 0;
+
+    if (nCode == HCBT_ACTIVATE)
+    {
+        HWND hWnd = (HWND)wParam;
+        
+        DBG_HWND(hWnd);
+        
+        allowDarkMode(hWnd);
+        enableImmersiveDarkMode(hWnd);
+
+        if (StrCmp(L"#32770", buff)) {
+            BOOL lr = SetWindowSubclass(hWnd, CallWndSubClassProc, 1, 0);
+            //ASSERT(lr);
+        }
+
+        HWND h2 = NULL;
+        int i = 0;
+        h2 = GetDlgItem(hWnd, i);
+        while (h2) {
+            DBG_HWND(h2);
+            if (StrCmp(L"#32770", buff)) {
+                allowDarkMode(h2);
+
+                HWND h3 = GetDlgItem(h2, 0);
+                if (h3) {
+                    DBG_HWND(h3);
+                    allowDarkMode(h3);
+                    HWND h4 = GetDlgItem(h3, 0);
+                    if (h4) {
+                        DBG_HWND(h4);
+                        allowDarkMode(h4);
+                    }
+                }
+            }
+            i++;
+            h2 = GetDlgItem(hWnd, i);
+        }
+
+        if (_tcscmp(buff, _T("Effects")) == 0)
+        {
+            //ShowWindow(hWnd, SW_HIDE);
+            //g_hWndEffects = hWnd;
+            //UnhookWindowsHookEx(g_hook);
+        }
+        if (_tcscmp(buff, _T("Display Properties")) == 0)
+        {
+            //ShowWindow(hWnd, SW_HIDE);
+        }
+    }
+
+    return 0;
+}
+
 bool APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpRes)
 {
     OutputDebugString(L"DllMain");
@@ -108,11 +205,53 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
 {
     //OutputDebugString(L"CallWndSubClassProc\n");
 
-    LRESULT lr = 0;
-    if (UAHWndProc(hWnd, uMsg, wParam, lParam, &lr)) {
-        //OutputDebugString(L"UAHWndProc TRUE\n");
-        return TRUE;
+    //switch (uMsg) {
+    //case WM_ACTIVATE:
+    //{
+    //    WCHAR buf[200];
+    //    GetClassName(hWnd, buf, 200);
+    //    std::wstringstream ss;
+    //    ss << L"WM_ACTIVATE classname: " << buf << std::endl;
+    //    OutputDebugString(ss.str().c_str());
+    //    enableImmersiveDarkMode(hWnd);
+    //}
+    //    break;
+    //default:
+    //    break;
+    //}
+
+    if (uIdSubclass == 0) {
+        switch (uMsg) {
+        //case WM_CHILDACTIVATE:
+        //    return true;
+        default:
+            break;
+        }
     }
+
+    if (uIdSubclass == 0) {
+        LRESULT lr = 0;
+        if (UAHWndProc(hWnd, uMsg, wParam, lParam, &lr)) {
+            //OutputDebugString(L"UAHWndProc TRUE\n");
+            return TRUE;
+        }
+    }
+
+    if (uIdSubclass == 1) {
+        switch (uMsg) {
+        case WM_SHOWWINDOW:
+            allowDarkMode(hWnd);
+            enableImmersiveDarkMode(hWnd);
+            break;
+        //case WM_PAINT:
+        //    return true;
+        //case WM_ERASEBKGND:
+        //    return true;
+        default:
+            break;
+        }
+    }
+
     //OutputDebugString(L"UAHWndProc FALSE\n");
     return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
@@ -158,6 +297,7 @@ extern "C" {
             main_hwnd = GetMainHwnd();
             ASSERT(main_hwnd);
 
+            enableImmersiveDarkMode(main_hwnd);
             allowDarkMode(main_hwnd);
 
 #ifndef NDEBUG
@@ -182,6 +322,11 @@ extern "C" {
 #ifdef USE_SUBCLASS_SOLUTION
             BOOL lr = SetWindowSubclass(main_hwnd, CallWndSubClassProc, 0, 0);
             ASSERT(lr);
+
+            ASSERT(!hook_);
+            hook_ = SetWindowsHookEx(WH_CBT, CBTProc, NULL, GetCurrentThreadId());
+            ASSERT(hook_);
+            OutputDebugString(L"CBT Hook installed.\n");
 #endif
 
 #ifdef USE_HOOK_SOLUTION
@@ -201,7 +346,16 @@ extern "C" {
             BOOL lr = RemoveWindowSubclass(main_hwnd, CallWndSubClassProc, 0);
             if (!lr) {
                 int err = GetLastError();
-                ASSERT(err == 1400); // invalid window handle
+                std::wstringstream ss;
+                ss << "ERROR: " << err << std::endl;
+                OutputDebugString(ss.str().c_str());
+                //ASSERT(err == 1400); // invalid window handle
+            }
+
+            if (hook_) {
+                UnhookWindowsHookEx(hook_);
+                hook_ = NULL;
+                OutputDebugString(L"CBT Hook uninstalled.\n");
             }
 #endif
 

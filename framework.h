@@ -16,7 +16,9 @@
 //#define _WIN32_IE 0x0600        // Change this to the appropriate value to target other versions of IE.
 //#endif
 
-//#define WIN32_LEAN_AND_MEAN     // Exclude rarely-used stuff from Windows headers
+// Including SDKDDKVer.h defines the highest available Windows platform.
+#include <SDKDDKVer.h>
+#define WIN32_LEAN_AND_MEAN     // Exclude rarely-used stuff from Windows headers
 // Windows header files
 #include <cstdio>
 #include <windows.h>
@@ -46,7 +48,10 @@
 namespace UX {
 #include <Uxtheme.h>
 #pragma comment(lib, "uxtheme.lib")
+#include <dwmapi.h>
+#pragma comment(lib, "dwmapi.lib")
 }
+
 
 
 // generic C++ stuff

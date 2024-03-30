@@ -38,6 +38,9 @@ cmake_path(SET REAPERSDK_INCLUDE_DIRS NORMALIZE "${reapersdk_SOURCE_DIR}/sdk/")
 add_library(${PROJECT_NAME} SHARED
     framework.h
 
+    utils.cpp
+    utils.h
+
     UAHMenuBar.cpp
     UAHMenuBar.h
 

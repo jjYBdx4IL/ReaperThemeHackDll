@@ -5,6 +5,7 @@
 #include <Vssym32.h>
 
 #include "inipp.h"
+#include "utils.h"
 
 static UX::HTHEME g_menuTheme = nullptr;
 
@@ -117,6 +118,7 @@ int WM_UAHMEASUREMENUITEM_cnt = 0;
 
 bool UAHWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT* lr)
 {
+#ifndef NDEBUG
     static int dupe_counter = 0;
     static int last_message = -1;
     if (message == last_message) {
@@ -133,9 +135,22 @@ bool UAHWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT* 
     }
     if (dupe_counter == 0) {
         std::wstringstream str;
-        str << L"UAHWndProc(" << hWnd << ", " << message << ", " << wParam << ", " << lParam << ")" << std::endl;
-        OutputDebugString(str.str().c_str());
+        WCHAR tmp[5];
+        swprintf_s(tmp, 5, L"%04x", message);
+        std::wstring s1 = std::format(L"{:%T}", std::chrono::system_clock::now());
+        str << s1 << L" UAHWndProc(" << hWnd << ", " << get_message_name(message) << " 0x" << tmp << " " << message << ", " << wParam << ", " << lParam << ")" << std::endl;
+        switch (message) { // https://wiki.winehq.org/List_Of_Windows_Messages
+        case WM_SETCURSOR: // 0x0020 32
+        case WM_NCMOUSEMOVE: // 0x00a0		160
+        case WM_NCHITTEST: // 0x0084		132
+        case WM_MOUSEMOVE: // 0x0200 512
+        case WM_NCMOUSELEAVE: // 0x02a2		674
+            break;
+        default:
+            OutputDebugString(str.str().c_str());
+        }
     }
+#endif
 
     load_config();
     switch (message)
