@@ -1,6 +1,6 @@
 # Description
 
-The Reaper DAW does not support skinning the menu bar.
+The Reaper DAW does not support skinning the menu bar under Windows.
 This is a plugin dll that hacks itself into the menu bar
 drawing process by subclassing the main window REAPERwnd.
 
@@ -13,9 +13,14 @@ copy a valid ini file there - the name is the dll's name plus '.ini').
 * For reaper to load the dll it seems to have to follow a naming convention. Rename it to
 'reaper_themehack-x64.dll'.
 
+# Build requirements
+
+* CMake and Visual Studio C++ with latest Windows 11 SDK.
+
 # Limitations
 
 * Menu dropdowns are in dark mode after toggling the fullscreen button twice.
+* Needs up-to-date Windows 11 installation.
 
 # Todos?
 
