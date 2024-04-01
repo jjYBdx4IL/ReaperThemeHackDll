@@ -1,4 +1,6 @@
 // https://wiki.winehq.org/List_Of_Windows_Messages + additions
+#include "inipp.h"
+#include "utils.h"
 
 LPCWSTR get_message_name(DWORD msg) {
 	if (msg == 0) return L"WM_NULL";
@@ -1067,4 +1069,240 @@ LPCWSTR get_message_name(DWORD msg) {
 	if (msg == 32768) return L"WM_APP";
 	if (msg == 52429) return L"WM_RASDIALEVENT";
 	return L"???";
+}
+
+void GetAllWindowsFromProcessID(DWORD dwProcessID, std::vector<HWND>& vhWnds)
+{
+    TCHAR buff[512];
+#define DBG_HWND(x) \
+        { \
+            GetWindowText(x, buff, 512); \
+            OutputDebugString(buff); \
+            OutputDebugString(L" - "); \
+            GetClassName(x, buff, 512); \
+            OutputDebugString(buff); \
+            OutputDebugString(L"\n"); \
+        }
+
+
+    // find all hWnds (vhWnds) associated with a process id (dwProcessID)
+    HWND hCurWnd = NULL;
+    do
+    {
+        hCurWnd = FindWindowEx(NULL, hCurWnd, NULL, NULL);
+        if (hCurWnd != NULL)
+        {
+            DBG_HWND(hCurWnd);
+            if (!StrCmpW(L"#32770", buff)) {
+                OutputDebugString(L"");
+            }
+            DWORD curProcessID = 0;
+            DWORD iii = GetWindowThreadProcessId(hCurWnd, &curProcessID);
+            if (curProcessID == dwProcessID)
+            {
+                vhWnds.push_back(hCurWnd);  // add the found hCurWnd to the vector
+                std::wstringstream ss;
+                ss << L"Found hWnd " << hCurWnd << std::endl;
+                OutputDebugString(ss.str().c_str());
+            }
+        }
+    } while (hCurWnd != NULL);
+}
+
+void GetAllChildWindowsFromParent(HWND parent, std::vector<HWND>& vhWnds)
+{
+    TCHAR buff[512];
+    DWORD tpid = 0;
+    DWORD ownerTid = GetWindowThreadProcessId(parent, &tpid);
+    ASSERT(ownerTid);
+
+    // find all hWnds (vhWnds) associated with a process id (dwProcessID)
+    HWND hCurWnd = NULL;
+    do
+    {
+        hCurWnd = FindWindowEx(parent, hCurWnd, NULL, NULL);
+        if (hCurWnd != NULL)
+        {
+            //DBG_HWND(hCurWnd);
+            //if (!StrCmpW(L"#32770", buff)) {
+            //    OutputDebugString(L"");
+            //}
+            DWORD curProcessID = 0;
+            DWORD iii = GetWindowThreadProcessId(hCurWnd, &curProcessID);
+            if (curProcessID == tpid)
+            {
+                vhWnds.push_back(hCurWnd);  // add the found hCurWnd to the vector
+                //std::wstringstream ss;
+                //ss << L"Found hWnd " << hCurWnd << std::endl;
+                //OutputDebugString(ss.str().c_str());
+            }
+        }
+    } while (hCurWnd != NULL);
+}
+
+
+const _cfg_type* load_config() {
+    static BOOL config_loaded = FALSE;
+    static _cfg_type _cfg;
+
+    if (config_loaded) return &_cfg;
+    config_loaded = TRUE;
+
+    HMODULE hm = NULL;
+    BOOL lr = GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)load_config, &hm);
+    ASSERT(lr);
+    ASSERT(hm);
+    WCHAR path[MAX_PATH];
+    GetModuleFileNameW(hm, path, MAX_PATH);
+    CStringW inifn(path);
+    inifn.Append(L".ini");
+    OutputDebugString(L"INI filename: " + inifn + L"\n");
+
+    if (!std::filesystem::exists(inifn.GetString())) {
+        std::ofstream myfile;
+        myfile.open(inifn.GetString());
+        myfile << "menubar_textcolor = 200,200,200" << std::endl;
+        myfile << "menubar_textcolor_disabled = 160,160,160" << std::endl;
+        myfile << "menubar_bgcolor = 20,20,20" << std::endl;
+        myfile << "menubaritem_bgcolor = 20,20,20" << std::endl;
+        myfile << "menubaritem_bgcolor_hot = 20,20,20" << std::endl;
+        myfile << "menubaritem_bgcolor_selected = 20,20,20" << std::endl;
+        myfile.close();
+    }
+
+    inipp::Ini<char> ini;
+    std::ifstream is(inifn.GetString());
+    ini.parse(is);
+    //is.close();
+    std::ostringstream oss;
+    ini.generate(oss);
+    OutputDebugStringA(oss.str().c_str());
+    OutputDebugString(L"\n");
+    OutputDebugStringA(ini.sections[""]["bkgd"].c_str());
+    OutputDebugString(L"\n");
+
+#define _PARSE_COLOR(x) \
+    { \
+        int r, g, b; \
+        char comma; \
+        std::stringstream ss(ini.sections[""][#x]); \
+        ss >> r >> comma >> g >> comma >> b; \
+        _cfg.x = RGB(r, g, b); \
+    }
+
+    _PARSE_COLOR(menubar_textcolor);
+    _PARSE_COLOR(menubar_textcolor_disabled);
+
+#define _PARSE_COLOR_BRUSH(x) \
+    { \
+        int r, g, b; \
+        char comma; \
+        std::stringstream ss(ini.sections[""][#x]); \
+        ss >> r >> comma >> g >> comma >> b; \
+        _cfg.x = CreateSolidBrush(RGB(r, g, b)); \
+    }
+
+    _PARSE_COLOR(menubar_bgcolor);
+    _PARSE_COLOR(menubaritem_bgcolor);
+    _PARSE_COLOR(menubaritem_bgcolor_hot);
+    _PARSE_COLOR(menubaritem_bgcolor_selected);
+
+    _cfg.menubar_bgbrush = CreateSolidBrush(_cfg.menubar_bgcolor);
+    _cfg.menubaritem_bgbrush = CreateSolidBrush(_cfg.menubaritem_bgcolor);
+    _cfg.menubaritem_bgbrush_hot = CreateSolidBrush(_cfg.menubaritem_bgcolor_hot);
+    _cfg.menubaritem_bgbrush_selected = CreateSolidBrush(_cfg.menubaritem_bgcolor_selected);
+
+    return &_cfg;
+}
+
+bool isClass(HWND hwnd, const TCHAR* classname) {
+    TCHAR buf[512];
+    GetClassName(hwnd, buf, 512);
+    return wcsicmp(classname, buf) == 0;
+}
+
+void dbgMsg(HWND hWnd, UINT_PTR subclass, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) { // https://wiki.winehq.org/List_Of_Windows_Messages
+    case WM_GETTEXT:
+    case WM_SETCURSOR: // 0x0020 32
+    case WM_NCMOUSEMOVE: // 0x00a0		160
+    case WM_NCHITTEST: // 0x0084		132
+    case WM_MOUSEMOVE: // 0x0200 512
+    case WM_NCMOUSELEAVE: // 0x02a2		674
+    case WM_TIMER:
+    case 2034:
+        return;
+    }
+
+    static int dupe_counter = 0;
+    static int last_message = -1;
+    static HWND last_hwnd = NULL;
+    static UINT_PTR last_subclass = -1;
+    if (message == last_message && hWnd == last_hwnd) {
+        dupe_counter++;
+    }
+    else {
+        if (dupe_counter) {
+            std::wstringstream str;
+            WCHAR tmp[64];
+            swprintf_s(tmp, 64, L"%p", last_hwnd);
+            WCHAR tmp2[8];
+            swprintf_s(tmp2, 8, L" 0x%04x", last_message);
+            std::wstring s1 = std::format(L"{:%T}", std::chrono::system_clock::now());
+            str << s1 << L" dbgMsg(" << tmp << L"," << last_subclass << L")" << L" Suppressed " << dupe_counter << " sequential messages of the same type" << tmp2 << L" " << get_message_name(last_message) << std::endl;
+            OutputDebugString(str.str().c_str());
+            dupe_counter = 0;
+        }
+        last_message = message;
+        last_hwnd = hWnd;
+        last_subclass = subclass;
+    }
+    if (dupe_counter == 0) {
+        HWND parent = GetParent(hWnd);
+        WCHAR _parent[64];
+        swprintf_s(_parent, 64, L" (parent=%p)", parent);
+        WCHAR tmp[64];
+        swprintf_s(tmp, 64, L"%p", hWnd);
+        WCHAR tmp2[8];
+        swprintf_s(tmp2, 8, L" 0x%04x", message);
+
+        WCHAR tmp_style[64];
+        DWORD style = GetWindowLongPtr(hWnd, GWL_STYLE);
+        swprintf_s(tmp_style, 64, L" (style=0x%08x)", style);
+
+        TCHAR wtxt[512];
+        TCHAR wcls[512];
+        GetWindowText(hWnd, wtxt, 512);
+        GetClassName(hWnd, wcls, 512);
+
+        if (!wcscmp(wcls, L"REAPERwnd")) { // remove private data from debug output
+            PWCHAR pos = wcsstr(wtxt, L" - Registered");
+            if (pos) {
+                *pos = L'\0';
+            }
+        }
+
+        std::wstring s1 = std::format(L"{:%T}", std::chrono::system_clock::now());
+        std::wstringstream str;
+        str << s1 << L" dbgMsg(" << tmp << L"," << subclass << L") '" << wcls << L"'(" << wtxt << L") " << get_message_name(message) << tmp2 << L"(" << message << L"), " \
+            << wParam << L", " << lParam << _parent << tmp_style << std::endl;
+        OutputDebugString(str.str().c_str());
+    }
+}
+
+void SendInputF11()
+{
+    INPUT inputs[2] = {};
+    ZeroMemory(inputs, sizeof(inputs));
+
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_F11;
+
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = VK_F11;
+    inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+    ASSERT(uSent == ARRAYSIZE(inputs));
 }

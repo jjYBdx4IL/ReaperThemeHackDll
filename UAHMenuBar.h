@@ -1,8 +1,4 @@
 #pragma once
-// processes messages related to UAH / custom menubar drawing.
-// return true if handled, false to continue with normal processing in your wndproc
-bool UAHWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT* lr);
-
 // window messages related to menu bar drawing
 #define WM_UAHDESTROYWINDOW    0x0090   // handled by DefWindowProc
 #define WM_UAHDRAWMENU         0x0091   // lParam is UAHMENU

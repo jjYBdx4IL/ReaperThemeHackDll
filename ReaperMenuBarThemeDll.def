@@ -1,0 +1,4 @@
+LIBRARY   ReaperThemeHackDll
+EXPORTS
+   DllMain   @1
+
