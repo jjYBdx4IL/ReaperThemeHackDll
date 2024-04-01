@@ -127,7 +127,8 @@ LRESULT CALLBACK CBTProc(int nCode,
         DBG_HWND(hWnd, HCBT_CREATEWND);
 
         // need to be careful with subclassing (avoiding conflict with SWS plugin)
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"ComboBox") || isClass(hWnd, L"SysListView32") || isClass(hWnd, L"SysTreeView32")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
+            || isClass(hWnd, L"ComboBox") || isClass(hWnd, L"SysListView32") || isClass(hWnd, L"SysTreeView32")) {
             enableImmersiveDarkMode(hWnd);
             allowDarkMode(hWnd);
             BOOL lr = SetWindowSubclass(hWnd, CallWndSubClassProc, 0, 0);
@@ -139,7 +140,8 @@ LRESULT CALLBACK CBTProc(int nCode,
     {
         HWND hWnd = (HWND)wParam;
         DBG_HWND(hWnd, HCBT_DESTROYWND);
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"ComboBox") || isClass(hWnd, L"SysListView32") || isClass(hWnd, L"SysTreeView32")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
+            || isClass(hWnd, L"ComboBox") || isClass(hWnd, L"SysListView32") || isClass(hWnd, L"SysTreeView32")) {
             RemoveWindowSubclass(hWnd, CallWndSubClassProc, 0);
         }
         break;

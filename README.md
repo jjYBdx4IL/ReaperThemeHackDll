@@ -22,8 +22,8 @@ See CMakeLists.txt for more information.
 # Installation
 
 * Required: Visual Studio C/C++ + latest Win11 SDK
-* `cmake -B build ; cd build ; cmake --build . --config Release`
-* Find the built dll and withdll.exe, and copy them with runwith.cmd to your Reaper installation directory.
+* `cmake -B build && cd build && cmake --build . --config Release`
+* Find the built dll and withdll.exe, and copy them with runwithdll.cmd to your Reaper installation directory.
 Adjust the script if needed.
 * The Reaper installation folder must be user-writable because the DLL will create a default .ini file alongside.
 
@@ -42,6 +42,10 @@ with win32 style hacks.
 * https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/Controls/about-custom-draw.md
 * Reaper forum thread: https://forum.cockos.com/showthread.php?t=289792
 
+# Screenshots
+
+![](https://i.imgur.com/XNwMWHD.png)
+
 
 --
-devel/cpp/win/ReaperThemeHackDll@8088
+devel/cpp/win/ReaperThemeHackDll@8089

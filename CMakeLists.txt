@@ -111,9 +111,9 @@ if (EXISTS "${REAPER_EXE_PATH}")
         # remove UserPlugin variant so we don't end up running two instances
         # within the same Reaper process
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
-            COMMAND "${CMAKE_COMMAND}" -E rm 
+            COMMAND "${CMAKE_COMMAND}" -E rm -f 
             "${REAPER_USERDLL_PATH}"
-            COMMENT "Removing ${REAPER_INSTALL_PATH}")
+            COMMENT "Removing ${REAPER_USERDLL_PATH}")
         set_target_properties(${PROJECT_NAME} PROPERTIES
             VS_DEBUGGER_COMMAND "${WITHDLLEXE_PATH}"
             VS_DEBUGGER_COMMAND_ARGUMENTS "/d:${REAPER_INSTALL_PATH}/${PROJECT_NAME}.dll ${REAPER_EXE_PATH}")
