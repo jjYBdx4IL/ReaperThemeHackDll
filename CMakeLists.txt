@@ -49,13 +49,13 @@ if(WITH_DETOURS_WITHDLL)
       URL https://github.com/microsoft/Detours/archive/4b8c659f549b0ab21cf649377c7a84eb708f5e68.zip
       URL_HASH SHA256=08d965a8374ca1e56bcf05380d2ee7daa846080b85d568223a41c20b5913bbf8
       CONFIGURE_COMMAND ""
-      BUILD_COMMAND nmake
+      BUILD_COMMAND nmake $<$<CONFIG:Debug>:DETOURS_CONFIG=Debug>
       INSTALL_COMMAND ""
       BUILD_IN_SOURCE TRUE
       DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
     ExternalProject_Get_property(detours SOURCE_DIR)
-    cmake_path(SET WITHDLLEXE_PATH NORMALIZE "${SOURCE_DIR}/bin.X64/withdll.exe")
+    cmake_path(SET WITHDLLEXE_PATH NORMALIZE "${SOURCE_DIR}/bin.X64$<$<CONFIG:Debug>:Debug>/withdll.exe")
 endif()
 
 #
@@ -86,13 +86,29 @@ add_library(${PROJECT_NAME} SHARED
 
     README.md
 )
-add_dependencies(${PROJECT_NAME} detours)
 target_include_directories(${PROJECT_NAME} PRIVATE ${REAPERSDK_INCLUDE_DIRS} ${INIPP_INCLUDE_DIRS})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 target_precompile_headers(${PROJECT_NAME} PRIVATE framework.h)
 
 # withdll.exe wants ordinal 1
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/DEF:\"${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.def\"")
+
+if(WITH_DETOURS_WITHDLL)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/runwithdll.cmd
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/."
+        COMMENT "Copying runwithdll.cmd into $<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        DEPENDS detours
+        )
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${WITHDLLEXE_PATH}
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/."
+        COMMENT "Copying withdll.exe into $<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        DEPENDS detours
+        )
+endif()
 
 #
 # set up debugging under reaper for convenience
@@ -103,17 +119,17 @@ cmake_path(SET REAPER_USERDLL_PATH NORMALIZE "${REAPER_HOME}/UserPlugins/reaper_
 if (EXISTS "${REAPER_EXE_PATH}")
     if(WITH_DETOURS_WITHDLL) # dll 'preload' mode
         cmake_path(GET REAPER_EXE_PATH PARENT_PATH REAPER_INSTALL_PATH)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
-            COMMAND "${CMAKE_COMMAND}" -E copy 
-            "$<TARGET_FILE:${PROJECT_NAME}>"
-            "${REAPER_INSTALL_PATH}" 
-            COMMENT "Copying to reaper install directory ${REAPER_INSTALL_PATH}")
         # remove UserPlugin variant so we don't end up running two instances
         # within the same Reaper process
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
             COMMAND "${CMAKE_COMMAND}" -E rm -f 
             "${REAPER_USERDLL_PATH}"
             COMMENT "Removing ${REAPER_USERDLL_PATH}")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
+            COMMAND "${CMAKE_COMMAND}" -E copy 
+            "$<TARGET_FILE:${PROJECT_NAME}>"
+            "${REAPER_INSTALL_PATH}" 
+            COMMENT "Copying $<TARGET_FILE_NAME:${PROJECT_NAME}> into reaper install directory ${REAPER_INSTALL_PATH}")
         set_target_properties(${PROJECT_NAME} PROPERTIES
             VS_DEBUGGER_COMMAND "${WITHDLLEXE_PATH}"
             VS_DEBUGGER_COMMAND_ARGUMENTS "/d:${REAPER_INSTALL_PATH}/${PROJECT_NAME}.dll ${REAPER_EXE_PATH}")

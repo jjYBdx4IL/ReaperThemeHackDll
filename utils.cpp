@@ -1173,7 +1173,7 @@ const _cfg_type* load_config() {
     inipp::Ini<char> ini;
     std::ifstream is(inifn.GetString());
     ini.parse(is);
-    //is.close();
+    is.close();
     std::ostringstream oss;
     ini.generate(oss);
     OutputDebugStringA(oss.str().c_str());

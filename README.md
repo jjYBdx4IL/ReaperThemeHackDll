@@ -35,6 +35,8 @@ Adjust the script if needed.
 
 * The project at https://github.com/jjYBdx4IL/win32-custom-menubar-aero-theme may be used to experiment
 with win32 style hacks.
+* How to add cmd script to Win 11 task bar: rename to exe, right click, pin, rename back, shift-right-click on task bar entry, adjust script name and optionally the icon (you can 'steal' it from reaper.exe).
+* How to make the console window go away: shift-right-click the task bar entry and prepend the script location with: "powershell Start -WindowStyle hidden " (excluding the quotation marks)
 
 # External references
 * https://github.com/hunterboy2023/win32-custom-menubar-aero-theme
@@ -48,4 +50,4 @@ with win32 style hacks.
 
 
 --
-devel/cpp/win/ReaperThemeHackDll@8089
+devel/cpp/win/ReaperThemeHackDll@8091
