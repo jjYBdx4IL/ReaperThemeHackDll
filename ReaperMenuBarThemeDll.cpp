@@ -126,9 +126,16 @@ LRESULT CALLBACK CBTProc(int nCode,
         HWND hWnd = (HWND)wParam;
         DBG_HWND(hWnd, HCBT_CREATEWND);
 
+        DWORD style = GetWindowLong(hWnd, GWL_STYLE);
+
         // need to be careful with subclassing (avoiding conflict with SWS plugin)
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
-            || isClass(hWnd, L"ComboBox") || isClass(hWnd, L"SysListView32") || isClass(hWnd, L"SysTreeView32")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd")
+            || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
+            || isClass(hWnd, L"ComboBox")
+            // pick some widgets that aren't theme-able and leave the others alone
+            || (isClass(hWnd, L"SysListView32") && style & WS_CHILDWINDOW)
+            || (isClass(hWnd, L"SysTreeView32") && style & WS_CHILDWINDOW)
+            ) {
             enableImmersiveDarkMode(hWnd);
             allowDarkMode(hWnd);
             BOOL lr = SetWindowSubclass(hWnd, CallWndSubClassProc, 0, 0);
@@ -140,8 +147,16 @@ LRESULT CALLBACK CBTProc(int nCode,
     {
         HWND hWnd = (HWND)wParam;
         DBG_HWND(hWnd, HCBT_DESTROYWND);
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
-            || isClass(hWnd, L"ComboBox") || isClass(hWnd, L"SysListView32") || isClass(hWnd, L"SysTreeView32")) {
+
+        DWORD style = GetWindowLong(hWnd, GWL_STYLE);
+
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") 
+            || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
+            || isClass(hWnd, L"ComboBox")
+            // pick some widgets that aren't theme-able and leave the others alone
+            || (isClass(hWnd, L"SysListView32") && style & WS_CHILDWINDOW)
+            || (isClass(hWnd, L"SysTreeView32") && style & WS_CHILDWINDOW)
+            ) {
             RemoveWindowSubclass(hWnd, CallWndSubClassProc, 0);
         }
         break;
@@ -182,7 +197,7 @@ void paint_ODT_BUTTON(const DRAWITEMSTRUCT& dis) {
     SetBkColor(hdc, bkcolor);
     SetTextColor(hdc, load_config()->menubar_textcolor);
 
-    HBRUSH tmp = CreateSolidBrush(RGB(127, 192, 127));
+    HBRUSH tmp = CreateSolidBrush(RGB(127, 192, 127)); // border
     FillRect(hdc, &rc, tmp);
 
     Rectangle(hdc, 0, 0, rc.right, rc.bottom);
@@ -196,6 +211,9 @@ void paint_ODT_BUTTON(const DRAWITEMSTRUCT& dis) {
 
     TCHAR buf[128];
     GetWindowText(hwnd, buf, 128);
+    //std::wstringstream ss;
+    //ss << "paint_ODT_BUTTON button text: " << buf << std::endl;
+    //OutputDebugString(ss.str().c_str());
     DrawText(hdc, buf, -1, &rc, DT_EDITCONTROL | DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
     SelectObject(hdc, oldpen);
@@ -224,9 +242,12 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     {
         break;
     }
-    case WM_CTLCOLORDLG:
+    case WM_CTLCOLORDLG: 
     {
-        return (INT_PTR)load_config()->menubar_bgcolor;
+        HDC hdc = (HDC)wParam;
+        HWND dialog = (HWND)lParam;
+        if (!isClass(dialog, L"REAPERRoutePanel"))
+            return (INT_PTR)load_config()->menubar_bgcolor;
         break;
     }
     case WM_CTLCOLOREDIT:
@@ -273,6 +294,14 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     case WM_DRAWITEM:
     {
         const DRAWITEMSTRUCT& dis = *(DRAWITEMSTRUCT*)lParam;
+
+        //TCHAR buf[128];
+        //GetWindowText(dis.hwndItem, buf, 128);
+        //DWORD style = GetWindowLongPtr(dis.hwndItem, GWL_STYLE);
+        //std::wstringstream ss;
+        //ss << "WM_DRAWITEM button text: " << buf << ", style=" << style << std::endl;
+        //OutputDebugString(ss.str().c_str());
+
         if (dis.CtlType == ODT_BUTTON) {
             if (dis.itemAction) { // & ODA_DRAWENTIRE) {
                 paint_ODT_BUTTON(dis);
@@ -310,7 +339,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_NCACTIVATE:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_NCACTIVATE_cnt++;
             LRESULT lr = DefSubclassProc(hWnd, uMsg, wParam, lParam);
             UAHDrawMenuNCBottomLine(hWnd);
@@ -339,6 +368,9 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
                 break;
             case BS_LEFT: // 0x100
             case BS_PUSHBUTTON: // 0x0
+            case BS_CENTER:
+            case BS_RIGHT:
+            case BS_DEFPUSHBUTTON:
                 style = style | BS_OWNERDRAW;
                 //style = WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON;
                 SetWindowLongPtr(hWnd, GWL_STYLE, style);
@@ -349,11 +381,15 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_NCPAINT:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             LRESULT lr = DefSubclassProc(hWnd, uMsg, wParam, lParam);
             UAHDrawMenuNCBottomLine(hWnd);
             return lr;
         }
+        break;
+    }
+    case WM_NOTIFY:
+    {
         break;
     }
     case WM_PAINT:
@@ -381,7 +417,6 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     {
         break;
     }
-
     case WM_STYLECHANGING:
     case WM_STYLECHANGED:
     {
@@ -393,7 +428,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_THEMECHANGED:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_THEMECHANGED_cnt++;
             if (g_menuTheme) {
                 CloseThemeData(g_menuTheme);
@@ -405,7 +440,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     // https://stackoverflow.com/questions/77985210/how-to-set-menu-bar-color-in-win32
     case WM_UAHDRAWMENU:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_UAHDRAWMENU_cnt++;
             UAHMENU* pUDM = (UAHMENU*)lParam;
             RECT rc = { 0 };
@@ -426,7 +461,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_UAHDRAWMENUITEM:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_UAHDRAWMENUITEM_cnt++;
             UAHDRAWMENUITEM* pUDMI = (UAHDRAWMENUITEM*)lParam;
 
@@ -484,7 +519,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_UAHMEASUREMENUITEM:
     {
-        if (!isClass(hWnd, L"REAPERwnd") && !isClass(hWnd, L"#32770")) {
+        if (!isClass(hWnd, L"REAPERwnd") && !isClass(hWnd, L"REAPERMediaExplorerMainwnd") && !isClass(hWnd, L"#32770")) {
             WM_UAHMEASUREMENUITEM_cnt++;
             UAHMEASUREMENUITEM* pMmi = (UAHMEASUREMENUITEM*)lParam;
 
@@ -518,9 +553,9 @@ bool APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpRes)
     {
     case DLL_PROCESS_ATTACH:
     {
-//        while (!IsDebuggerPresent()) {
-//            Sleep(100);
-//        }
+        //while (!IsDebuggerPresent()) {
+        //    Sleep(100);
+        //}
         OutputDebugString(L"DLL_PROCESS_ATTACH\n");
         cnt++;
         ASSERT(cnt == 1);

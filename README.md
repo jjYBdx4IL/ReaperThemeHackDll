@@ -26,6 +26,7 @@ See CMakeLists.txt for more information.
 * Find the built dll and withdll.exe, and copy them with runwithdll.cmd to your Reaper installation directory.
 Adjust the script if needed.
 * The Reaper installation folder must be user-writable because the DLL will create a default .ini file alongside.
+INI color defaults are optimized for the rLive Reaper theme.
 
 # Limitations
 
@@ -43,6 +44,18 @@ with win32 style hacks.
 * https://github.com/microsoft/Detours
 * https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/Controls/about-custom-draw.md
 * Reaper forum thread: https://forum.cockos.com/showthread.php?t=289792
+* custom draw of Sys(Tree|List)View32??
+  * https://deweymao.github.io/c/c++/2017/06/04/custom_draw_implementation_of_tree_view_control.html
+  * https://learn.microsoft.com/en-us/windows/win32/controls/nm-customdraw
+```
+16:38:59:271	 dbgMsg(0000000000911132,0) 'SysTreeView32'() WM_NCCREATE 0x0081(129), 0, 1357328 (parent=0000000000360D8E) (style=0x40010027)
+16:38:59:271	 dbgMsg(0000000000911132,0) 'SysTreeView32'(Tree1) WM_NCCALCSIZE 0x0083(131), 0, 1357440 (parent=0000000000360D8E) (style=0x40010027)
+16:38:59:271	 dbgMsg(0000000000911132,0) 'SysTreeView32'(Tree1) WM_CREATE 0x0001(1), 0, 1357296 (parent=0000000000360D8E) (style=0x40010027)
+16:38:59:271	 dbgMsg(0000000000360D8E,0) '#32770'(Add new FX) WM_NOTIFYFORMAT 0x0055(85), 9507122, 3 (parent=0000000001D61116) (style=0x84cd0044)
+16:38:59:271	 dbgMsg(0000000000360D8E,0) '#32770'(Add new FX) WM_QUERYUISTATE 0x0129(297), 0, 0 (parent=0000000001D61116) (style=0x84cd0044)
+16:38:59:271	 dbgMsg(0000000000360D8E,0) '#32770'(Add new FX) WM_NOTIFY 0x004e(78), 1176, 1353552 (parent=0000000001D61116) (style=0x84cd0044)
+16:38:59:271	    WM_NOTIFY: idFrom=1176, hwndFrom=0000000000911132, code=4294967284 NM_CUSTOMDRAW, style=1073807399
+```
 
 # Screenshots
 
@@ -50,4 +63,4 @@ with win32 style hacks.
 
 
 --
-devel/cpp/win/ReaperThemeHackDll@8091
+devel/cpp/win/ReaperThemeHackDll@8094

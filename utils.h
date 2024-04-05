@@ -3,6 +3,8 @@ LPCWSTR get_message_name(DWORD msg);
 void GetAllWindowsFromProcessID(DWORD dwProcessID, std::vector<HWND>& vhWnds);
 void GetAllChildWindowsFromParent(HWND parent, std::vector<HWND>& vhWnds);
 bool isClass(HWND hwnd, const TCHAR* classname);
+bool classStartsWith(HWND hwnd, const TCHAR* classname);
+bool isParentTitleStartingWith(HWND hwnd, const TCHAR* prefix);
 void dbgMsg(HWND hWnd, UINT_PTR subclass, UINT message, WPARAM wParam, LPARAM lParam);
 void SendInputF11();
 

@@ -1071,6 +1071,32 @@ LPCWSTR get_message_name(DWORD msg) {
 	return L"???";
 }
 
+LPCWSTR get_nm_code_name(UINT code) {
+    if (code == NM_OUTOFMEMORY) return L"NM_OUTOFMEMORY";
+    if (code == NM_CLICK) return L"NM_CLICK";
+    if (code == NM_DBLCLK) return L"NM_DBLCLK";
+    if (code == NM_RETURN) return L"NM_RETURN";
+    if (code == NM_RCLICK) return L"NM_RCLICK";
+    if (code == NM_RDBLCLK) return L"NM_RDBLCLK";
+    if (code == NM_SETFOCUS) return L"NM_SETFOCUS";
+    if (code == NM_KILLFOCUS) return L"NM_KILLFOCUS";
+    if (code == NM_CUSTOMDRAW) return L"NM_CUSTOMDRAW";
+    if (code == NM_HOVER) return L"NM_HOVER";
+    if (code == NM_NCHITTEST) return L"NM_NCHITTEST";
+    if (code == NM_KEYDOWN) return L"NM_KEYDOWN";
+    if (code == NM_RELEASEDCAPTURE) return L"NM_RELEASEDCAPTURE";
+    if (code == NM_SETCURSOR) return L"NM_SETCURSOR";
+    if (code == NM_CHAR) return L"NM_CHAR";
+    if (code == NM_TOOLTIPSCREATED) return L"NM_TOOLTIPSCREATED";
+    if (code == NM_LDOWN) return L"NM_LDOWN";
+    if (code == NM_RDOWN) return L"NM_RDOWN";
+    if (code == NM_THEMECHANGED) return L"NM_THEMECHANGED";
+    if (code == NM_FONTCHANGED) return L"NM_FONTCHANGED";
+    if (code == NM_CUSTOMTEXT) return L"NM_CUSTOMTEXT";
+    if (code == NM_TVSTATEIMAGECHANGING) return L"NM_TVSTATEIMAGECHANGING";
+    return L"???";
+}
+
 void GetAllWindowsFromProcessID(DWORD dwProcessID, std::vector<HWND>& vhWnds)
 {
     TCHAR buff[512];
@@ -1161,12 +1187,12 @@ const _cfg_type* load_config() {
     if (!std::filesystem::exists(inifn.GetString())) {
         std::ofstream myfile;
         myfile.open(inifn.GetString());
-        myfile << "menubar_textcolor = 200,200,200" << std::endl;
+        myfile << "menubar_textcolor = 213,213,213" << std::endl;
         myfile << "menubar_textcolor_disabled = 160,160,160" << std::endl;
-        myfile << "menubar_bgcolor = 20,20,20" << std::endl;
-        myfile << "menubaritem_bgcolor = 20,20,20" << std::endl;
-        myfile << "menubaritem_bgcolor_hot = 20,20,20" << std::endl;
-        myfile << "menubaritem_bgcolor_selected = 20,20,20" << std::endl;
+        myfile << "menubar_bgcolor = 45,45,45" << std::endl;
+        myfile << "menubaritem_bgcolor = 45,45,45" << std::endl;
+        myfile << "menubaritem_bgcolor_hot = 65,65,65" << std::endl;
+        myfile << "menubaritem_bgcolor_selected = 55,55,55" << std::endl;
         myfile.close();
     }
 
@@ -1219,6 +1245,20 @@ bool isClass(HWND hwnd, const TCHAR* classname) {
     TCHAR buf[512];
     GetClassName(hwnd, buf, 512);
     return wcsicmp(classname, buf) == 0;
+}
+
+bool classStartsWith(HWND hwnd, const TCHAR* classname) {
+    TCHAR buf[512];
+    GetClassName(hwnd, buf, 512);
+    return wcsnicmp(classname, buf, wcslen(classname)) == 0;
+}
+
+bool isParentTitleStartingWith(HWND hwnd, const TCHAR* prefix) {
+    HWND parent = GetParent(hwnd);
+    if (!parent) return false;
+    TCHAR buf[512];
+    GetWindowText(hwnd, buf, 512);
+    return wcsnicmp(prefix, buf, wcslen(prefix)) == 0;
 }
 
 void dbgMsg(HWND hWnd, UINT_PTR subclass, UINT message, WPARAM wParam, LPARAM lParam)
@@ -1283,11 +1323,20 @@ void dbgMsg(HWND hWnd, UINT_PTR subclass, UINT message, WPARAM wParam, LPARAM lP
             }
         }
 
-        std::wstring s1 = std::format(L"{:%T}", std::chrono::system_clock::now());
         std::wstringstream str;
-        str << s1 << L" dbgMsg(" << tmp << L"," << subclass << L") '" << wcls << L"'(" << wtxt << L") " << get_message_name(message) << tmp2 << L"(" << message << L"), " \
+        str << L" dbgMsg(" << tmp << L"," << subclass << L") '" << wcls << L"'(" << wtxt << L") " << get_message_name(message) << tmp2 << L"(" << message << L"), " \
             << wParam << L", " << lParam << _parent << tmp_style << std::endl;
         OutputDebugString(str.str().c_str());
+
+        if (message == WM_NOTIFY)
+        {
+            std::wstringstream str;
+            const NMHDR* hdr = (LPNMHDR)lParam;
+            DWORD style = GetWindowLongPtr(hdr->hwndFrom, GWL_STYLE);
+            str << "    WM_NOTIFY: idFrom=" << hdr->idFrom << ", hwndFrom=" << hdr->hwndFrom
+                << ", code=" << hdr->code << " " << get_nm_code_name(hdr->code) << ", style=" << style << std::endl;
+            OutputDebugString(str.str().c_str());
+        }
     }
 }
 

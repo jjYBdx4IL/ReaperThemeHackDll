@@ -94,6 +94,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE framework.h)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/DEF:\"${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.def\"")
 
 if(WITH_DETOURS_WITHDLL)
+    add_dependencies(${PROJECT_NAME} detours)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/runwithdll.cmd
