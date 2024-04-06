@@ -20,7 +20,8 @@ set(WITH_DETOURS_WITHDLL TRUE CACHE BOOL TRUE)
 
 # your reaper install directory for debugging
 # (best to use a separate and clean portable install that's user-writable)
-cmake_path(SET REAPER_HOME NORMALIZE "${USERHOME}/source/reaper" )
+# cmake_path(SET REAPER_HOME NORMALIZE "${USERHOME}/source/reaper" )
+cmake_path(SET REAPER_HOME NORMALIZE "C:/ProgramData/Ableton/Live 12 Beta/Program" )
 
 #
 # DEPENDENCIES

@@ -2,7 +2,7 @@
 #include "utils.h"
 #define REAPERAPI_MINIMAL
 #define REAPERAPI_WANT_GetMainHwnd
-#include "reaper_plugin_functions.h"
+// #include "reaper_plugin_functions.h"
 
 int WM_NCACTIVATE_cnt = 0;
 int WM_THEMECHANGED_cnt = 0;
@@ -129,7 +129,7 @@ LRESULT CALLBACK CBTProc(int nCode,
         DWORD style = GetWindowLong(hWnd, GWL_STYLE);
 
         // need to be careful with subclassing (avoiding conflict with SWS plugin)
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd")
+        if (isClass(hWnd, L"Ableton Live Window Class") || isClass(hWnd, L"REAPERMediaExplorerMainwnd")
             || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
             || isClass(hWnd, L"ComboBox")
             // pick some widgets that aren't theme-able and leave the others alone
@@ -150,7 +150,7 @@ LRESULT CALLBACK CBTProc(int nCode,
 
         DWORD style = GetWindowLong(hWnd, GWL_STYLE);
 
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") 
+        if (isClass(hWnd, L"Ableton Live Window Class") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") 
             || isClass(hWnd, L"#32770") || isClass(hWnd, L"Button") || isClass(hWnd, L"tooltips_class32")
             || isClass(hWnd, L"ComboBox")
             // pick some widgets that aren't theme-able and leave the others alone
@@ -339,7 +339,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_NCACTIVATE:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"Ableton Live Window Class") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_NCACTIVATE_cnt++;
             LRESULT lr = DefSubclassProc(hWnd, uMsg, wParam, lParam);
             UAHDrawMenuNCBottomLine(hWnd);
@@ -381,7 +381,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_NCPAINT:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"Ableton Live Window Class") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             LRESULT lr = DefSubclassProc(hWnd, uMsg, wParam, lParam);
             UAHDrawMenuNCBottomLine(hWnd);
             return lr;
@@ -420,7 +420,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     case WM_STYLECHANGING:
     case WM_STYLECHANGED:
     {
-        if (isClass(hWnd, L"REAPERwnd")) {
+        if (isClass(hWnd, L"Ableton Live Window Class")) {
             // prevent propagation to prevent menu bar from going back to the standard one...?!? FIXME
             return true;
         }
@@ -428,7 +428,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_THEMECHANGED:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"Ableton Live Window Class") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_THEMECHANGED_cnt++;
             if (g_menuTheme) {
                 CloseThemeData(g_menuTheme);
@@ -440,7 +440,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     // https://stackoverflow.com/questions/77985210/how-to-set-menu-bar-color-in-win32
     case WM_UAHDRAWMENU:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"Ableton Live Window Class") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_UAHDRAWMENU_cnt++;
             UAHMENU* pUDM = (UAHMENU*)lParam;
             RECT rc = { 0 };
@@ -461,7 +461,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_UAHDRAWMENUITEM:
     {
-        if (isClass(hWnd, L"REAPERwnd") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
+        if (isClass(hWnd, L"Ableton Live Window Class") || isClass(hWnd, L"REAPERMediaExplorerMainwnd") || isClass(hWnd, L"#32770")) {
             WM_UAHDRAWMENUITEM_cnt++;
             UAHDRAWMENUITEM* pUDMI = (UAHDRAWMENUITEM*)lParam;
 
@@ -519,7 +519,7 @@ LRESULT CALLBACK CallWndSubClassProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
     case WM_UAHMEASUREMENUITEM:
     {
-        if (!isClass(hWnd, L"REAPERwnd") && !isClass(hWnd, L"REAPERMediaExplorerMainwnd") && !isClass(hWnd, L"#32770")) {
+        if (!isClass(hWnd, L"Ableton Live Window Class") && !isClass(hWnd, L"REAPERMediaExplorerMainwnd") && !isClass(hWnd, L"#32770")) {
             WM_UAHMEASUREMENUITEM_cnt++;
             UAHMEASUREMENUITEM* pMmi = (UAHMEASUREMENUITEM*)lParam;
 
@@ -614,36 +614,36 @@ bool APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpRes)
 }
 
 
-REAPER_PLUGIN_HINSTANCE g_hInst{ nullptr };
+// REAPER_PLUGIN_HINSTANCE g_hInst{ nullptr };
 
-extern "C" {
+// extern "C" {
 
-    REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(REAPER_PLUGIN_HINSTANCE hInstance, reaper_plugin_info_t* rec)
-    {
-        OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT\n");
-        ASSERT(hInstance);
-        g_hInst = hInstance;
-        if (rec)
-        {
-            if (rec->caller_version != REAPER_PLUGIN_VERSION || !rec->GetFunc) {
-                OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT: ERROR\n");
-                return 0;
-            }
+//     REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(REAPER_PLUGIN_HINSTANCE hInstance, reaper_plugin_info_t* rec)
+//     {
+//         OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT\n");
+//         ASSERT(hInstance);
+//         g_hInst = hInstance;
+//         if (rec)
+//         {
+//             if (rec->caller_version != REAPER_PLUGIN_VERSION || !rec->GetFunc) {
+//                 OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT: ERROR\n");
+//                 return 0;
+//             }
 
-            *((void**)&GetMainHwnd) = rec->GetFunc("GetMainHwnd");
-            ASSERT(GetMainHwnd);
+//             *((void**)&GetMainHwnd) = rec->GetFunc("GetMainHwnd");
+//             ASSERT(GetMainHwnd);
 
-            main_hwnd = GetMainHwnd();
-            ASSERT(main_hwnd);
+//             main_hwnd = GetMainHwnd();
+//             ASSERT(main_hwnd);
 
-            OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT: SUCCESS\n");
-            return 1;
-        }
-        else
-        {
-            OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT: ERROR\n");
-            return 0;
-        }
-    }
+//             OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT: SUCCESS\n");
+//             return 1;
+//         }
+//         else
+//         {
+//             OutputDebugString(L"REAPER_PLUGIN_ENTRYPOINT: ERROR\n");
+//             return 0;
+//         }
+//     }
 
-}
+// }
